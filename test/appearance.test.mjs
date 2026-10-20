@@ -169,7 +169,16 @@ test('the bubble is clickable so the panel opens from it', () => {
   const bubbleRule = /\.dsg-bubble\{[^}]*\}/.exec(src);
   assert.ok(bubbleRule, 'the bubble needs a rule');
   assert.match(bubbleRule[0], /pointer-events:auto/, 'the bubble must accept pointer events');
-  assert.doesNotMatch(bubbleRule[0], /pointer-events:none/, 'a click-through bubble cannot open the panel');
+  assert.doesNotMatch(bubbleRule[0], /pointer-events:none/, 'a click-through bubble cannot be dismissed');
+});
+
+test('pressing the bubble dismisses it instead of opening the panel', () => {
+  // The notice behaves like a toast: the press makes it go away. Opening settings is the
+  // figure's job, so the two affordances never compete.
+  assert.match(src, /void store\.acknowledge\(\)/, 'the bubble must acknowledge on press');
+  assert.match(src, /t\('dismissBubble'\)/, 'the bubble needs its own accessible label');
+  const bubbleBlock = src.slice(src.indexOf("className: 'dsg-bubble'"), src.indexOf("}, message)"));
+  assert.doesNotMatch(bubbleBlock, /store\.activate\(\)/, 'a press on the bubble must not open the panel');
 });
 
 test('the bubble has its own switch', () => {
