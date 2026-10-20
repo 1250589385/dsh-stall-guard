@@ -163,3 +163,16 @@ test('unsaved edits cannot be discarded by accident', () => {
   assert.match(src, /dsg-confirm/, 'an in-panel confirmation bar must exist');
   assert.match(src, /cancelClose\(\)/, 'the confirmation must be cancellable');
 });
+
+test('the bubble is clickable so the panel opens from it', () => {
+  // Reported: pressing the bubble did nothing because it let the press fall through.
+  const bubbleRule = /\.dsg-bubble\{[^}]*\}/.exec(src);
+  assert.ok(bubbleRule, 'the bubble needs a rule');
+  assert.match(bubbleRule[0], /pointer-events:auto/, 'the bubble must accept pointer events');
+  assert.doesNotMatch(bubbleRule[0], /pointer-events:none/, 'a click-through bubble cannot open the panel');
+});
+
+test('the bubble has its own switch', () => {
+  assert.match(src, /supervisor\.bubble !== false/, 'the client must read the bubble setting');
+  assert.match(src, /t\('showBubble'\)/, 'the panel must expose the toggle');
+});
