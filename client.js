@@ -1188,6 +1188,19 @@ window.__ModuleLoader__.load({
       }
     }
 
+    /**
+     * Subscribe to the appearance record.
+     *
+     * The record lives outside the polled snapshot, so it needs its own subscription. A
+     * shared hook keeps every consumer honest: an appearance change re-renders all of them.
+     */
+    function useAppearance() {
+      return useSyncExternalStore(
+        (listener) => store.subscribeAppearance(listener),
+        () => store.getAppearance(),
+      );
+    }
+
     function useTranslate(props) {
       return props.t !== undefined && typeof props.t === 'function' ? props.t : (boundT || ((key) => key));
     }
@@ -1208,11 +1221,10 @@ window.__ModuleLoader__.load({
       const snapshot = useStore();
       const orbRef = useRef(null);
       const [bubbleBelow, setBubbleBelow] = useState(false);
-      const [appearance, setAppearance] = useState(readAppearance);
+      const appearance = useAppearance();
       const [dragging, setDragging] = useState(false);
 
       useEffect(() => store.start(), []);
-      useEffect(() => store.subscribeAppearance(setAppearance), []);
 
       const config = snapshot.config;
       const supervisorOff = config !== null && config.supervisor.show === false;
@@ -1238,8 +1250,16 @@ window.__ModuleLoader__.load({
 
       /* Float placement: drag moves the control, and the position is clamped into the
        * viewport on release so a window resize cannot strand it off-screen. */
-      // The overlay seat forces the floating posture; the header seat reads the setting.
-      const floating = props.forcePlace === 'float' || appearance.place === 'float';
+      /**
+       * Which posture this render draws.
+       *
+       * The overlay seat forces floating; the header seat reads the user's setting. The two
+       * must be distinguished, because the header seat has to bail out when the chosen
+       * posture is floating — while the overlay seat must not bail out for the same reason.
+       */
+      const forcedFloat = props.forcePlace === 'float';
+      const wantsFloat = appearance.place === 'float';
+      const floating = forcedFloat || wantsFloat;
       const startDrag = useCallback((event) => {
         if (!floating) return;
         if (event.button !== undefined && event.button !== 0) return;
@@ -1270,10 +1290,11 @@ window.__ModuleLoader__.load({
         event.preventDefault();
       }, [floating]);
 
-      // Hidden, or drawn by the overlay because it floats: the header renders nothing in
-      // both cases. A floating figure inside the header's flow would push the header row
-      // around as it moved, which is exactly the bug this split fixes.
-      if (supervisorOff || floating) return null;
+      // The header seat renders nothing when the figure is hidden OR when the overlay owns
+      // it — a floating figure inside the header's flow would push that row around as it
+      // moved. The overlay seat asked for this render, so it never bails out here.
+      if (supervisorOff) return null;
+      if (wantsFloat && !forcedFloat) return null;
 
       const label = t('supervisor') + ' — ' + t(MODE_KEY[mode]);
       const size = appearance.size;
@@ -1354,9 +1375,13 @@ window.__ModuleLoader__.load({
     function FloatingSeat(props) {
       const t = useTranslate(props);
       const snapshot = useStore();
+      /* The overlay draws the figure only in the floating posture. Without this check both
+       * seats would render it, and the header would show a second copy. */
+      const appearance = useAppearance();
       useEffect(() => store.start(), []);
       if (snapshot.config === null) return null;
       if (snapshot.config.supervisor.show === false) return null;
+      if (appearance.place !== 'float') return null;
       return h(SupervisorSeat, { t, forcePlace: 'float' });
     }
 
@@ -1401,8 +1426,7 @@ window.__ModuleLoader__.load({
       const presetLocale = hostLocale() === 'en' ? 'en' : 'zh';
       /* Appearance is browser-local, so the panel mirrors it separately from the
        * Host draft; saving the config must not overwrite it and vice versa. */
-      const [localAppearance, setLocalAppearance] = useState(() => store.getAppearance());
-      useEffect(() => store.subscribeAppearance(setLocalAppearance), []);
+      const localAppearance = useAppearance();
       const [dirty, setDirty] = useState(false);
       const [status, setStatus] = useState({ kind: 'idle', text: '' });
 
