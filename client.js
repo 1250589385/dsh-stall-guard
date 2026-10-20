@@ -189,7 +189,7 @@ window.__ModuleLoader__.load({
       autoSwitch: 'Auto-switch fetch/search on timeout',
       sectionPresets: 'Preset text (sent to the agent)',
       sectionScenes: 'Each feature, configured separately',
-      scenesHint: 'Turn one off without affecting the others. Each has its own timeout and its own choice about the supervisor model.',
+      scenesHint: 'Turn one off without affecting the others. Each has its own timeout.',
       sceneSeconds: 'Timeout (s)',
       presetsHint: 'Write the exact text the agent reads when a stall is reported. Placeholders are filled in automatically; an empty box uses the built-in wording.',
       presetSceneDownload: 'Download',
@@ -207,6 +207,8 @@ window.__ModuleLoader__.load({
       sectionSupervisor: 'Supervisor',
       showSupervisor: 'Show the supervisor',
       showSupervisorHint: 'Off hides the figure but keeps the guard running; a small tab stays in the corner so you can switch it back.',
+      showBubble: 'Show the text bubble on a stall',
+      showBubbleHint: 'Off keeps the bouncing animation but hides the sentence. Click the figure or the bubble to open settings.',
       supervisorHiddenHint: 'Supervisor hidden — click to open settings',
       appearanceLabel: 'Icon appearance (this browser only)',
       iconSize: 'Size',
@@ -279,7 +281,7 @@ window.__ModuleLoader__.load({
       discardNo: '\u7ee7\u7eed\u7f16\u8f91',
       sectionPresets: '\u9884\u8bbe\u6587\u5b57\uff08\u53d1\u7ed9\u667a\u80fd\u4f53\uff09',
       sectionScenes: '\u6bcf\u4e2a\u529f\u80fd\u72ec\u7acb\u914d\u7f6e',
-      scenesHint: '\u5173\u6389\u4e00\u4e2a\u4e0d\u5f71\u54cd\u5176\u5b83\u3002\u6bcf\u4e2a\u7c7b\u578b\u6709\u81ea\u5df1\u7684\u8d85\u65f6\uff0c\u4e5f\u80fd\u81ea\u5df1\u51b3\u5b9a\u8981\u4e0d\u8981\u7528\u6a21\u578b\u5199\u63d0\u793a\u3002',
+      scenesHint: '\u5173\u6389\u4e00\u4e2a\u4e0d\u5f71\u54cd\u5176\u5b83\u3002\u6bcf\u4e2a\u7c7b\u578b\u6709\u81ea\u5df1\u7684\u8d85\u65f6\u3002',
       sceneSeconds: '\u8d85\u65f6\uff08\u79d2\uff09',
       presetsHint: '\u76f4\u63a5\u5199\u4f60\u8981\u53d1\u7ed9\u667a\u80fd\u4f53\u7684\u6587\u5b57\uff0c\u5360\u4f4d\u7b26\u4f1a\u81ea\u52a8\u66ff\u6362\uff1b\u7a7a\u7740 = \u7528\u5185\u7f6e\u6587\u6848\u3002',
       presetSceneDownload: '\u4e0b\u8f7d',
@@ -296,6 +298,8 @@ window.__ModuleLoader__.load({
       downloadSeconds: '\u4e0b\u8f7d\u8d85\u65f6\uff08\u79d2\uff09',
       showSupervisor: '\u663e\u793a\u76d1\u7763\u5458',
       showSupervisorHint: '\u5173\u6389\u540e\u4e0d\u518d\u663e\u793a\u5f62\u8c61\uff0c\u4f46\u5b88\u536b\u4ecd\u5728\u8fd0\u884c\uff1b\u53f3\u4e0b\u89d2\u4f1a\u7559\u4e00\u4e2a\u5c0f\u70b9\uff0c\u70b9\u5b83\u53ef\u4ee5\u518d\u6253\u5f00\u3002',
+      showBubble: '\u5361\u987f\u65f6\u663e\u793a\u6587\u5b57\u6c14\u6ce1',
+      showBubbleHint: '\u5173\u6389\u4ecd\u4f1a\u8df3\u52a8\uff0c\u4f46\u4e0d\u663e\u793a\u6587\u5b57\u3002\u70b9\u56fe\u6807\u6216\u6c14\u6ce1\u90fd\u80fd\u6253\u5f00\u8bbe\u7f6e\u3002',
       supervisorHiddenHint: '\u76d1\u7763\u5458\u5df2\u9690\u85cf \u2014 \u70b9\u51fb\u6253\u5f00\u8bbe\u7f6e',
       appearanceLabel: '\u56fe\u6807\u5916\u89c2\uff08\u4ec5\u672c\u6d4f\u89c8\u5668\uff09',
       iconSize: '\u5927\u5c0f',
@@ -496,6 +500,7 @@ window.__ModuleLoader__.load({
         presets: normalizePresets(body.presets),
         supervisor: {
           show: sup.show !== false,
+          bubble: sup.bubble !== false,
           display: pick(sup.display, DISPLAYS, 'avatar'),
         },
       };
@@ -858,6 +863,7 @@ window.__ModuleLoader__.load({
         },
         supervisor: {
           show: source.supervisor.show !== false,
+          bubble: source.supervisor.bubble !== false,
           display: source.supervisor.display,
         },
       };
@@ -905,6 +911,7 @@ window.__ModuleLoader__.load({
         },
         supervisor: {
           show: draft.supervisor.show !== false,
+          bubble: draft.supervisor.bubble !== false,
           display: pick(draft.supervisor.display, DISPLAYS, 'avatar'),
         },
       };
@@ -920,7 +927,7 @@ window.__ModuleLoader__.load({
      */
     const CSS = [
       /* ---- supervisor seat ---- */
-      '.dsg-seat{position:relative;display:inline-flex;flex:none;align-items:center;justify-content:center;pointer-events:auto}',
+      '.dsg-seat{position:relative;display:inline-flex;flex:none;align-items:center;justify-content:center;pointer-events:auto;overflow:visible}',
       '.dsg-orb{box-sizing:border-box;display:inline-flex;position:relative;align-items:center;justify-content:center;margin:0;padding:0;border:none;background:transparent;font-family:inherit;cursor:pointer;overflow:visible;border-radius:var(--dsw-radius-sm,6px);pointer-events:auto}',
       '.dsg-orb:focus-visible{outline:2px solid var(--dsw-alias-brand-primary,#4d6bfe);outline-offset:2px}',
       '.dsg-orb[data-display="dot"]{width:22px;height:22px}',
@@ -937,11 +944,14 @@ window.__ModuleLoader__.load({
       '.dsg-orb[data-mode="idle"] .dsg-avatar{opacity:.72;animation:none}',
       '.dsg-orb[data-mode="watching"] .dsg-avatar{animation:dsg-sway 3.2s ease-in-out infinite}',
       '.dsg-orb[data-mode="alert"] .dsg-avatar{animation:dsg-bounce-big .85s ease-in-out infinite}',
-      '.dsg-bubble{position:absolute;right:0;bottom:calc(100% + 7px);z-index:5;box-sizing:border-box;max-width:230px;min-width:64px;padding:4px 8px;border:1px solid var(--dsw-alias-border-l1,var(--dsh-border,rgba(255,255,255,.12)));border-radius:var(--dsw-radius-sm,8px);background:var(--dsw-alias-bg-overlay,var(--dsh-surface,rgba(20,22,28,.96)));box-shadow:var(--dsw-elevation-soft,0 4px 18px rgba(0,0,0,.2));color:var(--dsw-alias-label-primary,var(--dsh-text-primary,#e6e6e6));font-size:11px;line-height:15px;text-align:left;white-space:normal;word-break:break-word;pointer-events:none;animation:dsg-bubble-in .16s ease-out both}',
+      '.dsg-bubble{position:absolute;right:0;bottom:calc(100% + 7px);z-index:5;box-sizing:border-box;width:200px;max-width:calc(100vw - 40px);padding:4px 8px;border:1px solid var(--dsw-alias-border-l1,var(--dsh-border,rgba(255,255,255,.12)));border-radius:var(--dsw-radius-sm,8px);background:var(--dsw-alias-bg-overlay,var(--dsh-surface,rgba(20,22,28,.96)));box-shadow:var(--dsw-elevation-soft,0 4px 18px rgba(0,0,0,.2));color:var(--dsw-alias-label-primary,var(--dsh-text-primary,#e6e6e6));font-size:11px;line-height:15px;text-align:left;white-space:normal;overflow-wrap:break-word;word-break:normal;max-height:120px;overflow:hidden;pointer-events:auto;cursor:pointer;animation:dsg-bubble-in .16s ease-out both}',
       /* The header sits at the very top of the frame, so a bubble above the head
        * would be clipped by the viewport; the seat measures once and flips it
        * below when there is no room. */
       '.dsg-bubble[data-place="below"]{bottom:auto;top:calc(100% + 7px)}',
+      '.dsg-bubble:hover{border-color:var(--dsw-alias-brand-primary,#4d6bfe)}',
+      /* Hidden state: the bubble is not rendered at all, so there is nothing to dim. */
+
       /* ---- overlay panel ---- */
       '.dsg-panel{position:fixed;top:56px;right:14px;left:auto;z-index:70;box-sizing:border-box;width:min(430px,calc(100vw - 40px));max-height:min(74vh,660px);overflow:hidden;pointer-events:auto;display:flex;flex-direction:column;gap:0;padding:12px;border:1px solid var(--dsw-alias-border-l1,var(--dsh-border,rgba(255,255,255,.12)));border-radius:var(--dsw-radius-panel,12px);background:var(--dsw-alias-bg-overlay,var(--dsh-surface,rgba(20,22,28,.96)));box-shadow:var(--dsw-elevation-soft,0 8px 28px rgba(0,0,0,.22));color:var(--dsw-alias-label-primary,var(--dsh-text-primary,#e6e6e6));font:inherit;font-size:12px;line-height:18px}',
       '.dsg-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex:0 0 auto;padding-bottom:8px}',
@@ -1207,7 +1217,8 @@ window.__ModuleLoader__.load({
       const mode = snapshot.state === null ? 'idle' : snapshot.state.supervisor.mode;
       const display = config === null ? 'avatar' : config.supervisor.display;
       const message = snapshot.state === null ? '' : snapshot.state.supervisor.message;
-      const showBubble = !supervisorOff && display === 'avatar' && mode === 'alert' && message !== '';
+      const bubbleOn = config === null ? true : config.supervisor.bubble !== false;
+      const showBubble = !supervisorOff && bubbleOn && display === 'avatar' && mode === 'alert' && message !== '';
 
       /* The seat can live in the top bar or float anywhere; a bubble above the head
        * would be cut off by the viewport when it sits near the top, so measure once
@@ -1297,14 +1308,30 @@ window.__ModuleLoader__.load({
           display === 'dot' ? h('span', { className: 'dsg-dot' }) : null,
           display === 'icon' ? h(ShieldGlyph, { size: Math.round(size * 0.64) }) : null,
           display === 'avatar' ? h(WhaleGlyph, { size: Math.round(size * 0.82), mode }) : null,
-          showBubble
-            ? h('span', {
-              className: 'dsg-bubble',
-              'data-place': bubbleBelow ? 'below' : 'above',
-              role: 'status',
-            }, message)
-            : null,
         ),
+        /* The bubble is a SIBLING of the button, not a child: interactive content inside a
+         * button is invalid and browsers route its clicks unpredictably, and content painted
+         * outside the button box is not part of its hit area. */
+        showBubble
+          ? h('span', {
+            className: 'dsg-bubble',
+            'data-place': bubbleBelow ? 'below' : 'above',
+            role: 'button',
+            tabIndex: 0,
+            title: t('openPanel'),
+            onClick: (event) => {
+              event.stopPropagation();
+              store.activate();
+            },
+            onKeyDown: (event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                event.stopPropagation();
+                store.activate();
+              }
+            },
+          }, message)
+          : null,
       );
     }
 
@@ -1701,6 +1728,18 @@ window.__ModuleLoader__.load({
             h('span', null, t('showSupervisor')),
           ),
           h('p', { className: 'dsg-status' }, t('showSupervisorHint')),
+          h('label', { className: 'dsg-check' },
+            h('input', {
+              type: 'checkbox',
+              checked: draft.supervisor.bubble !== false,
+              onChange: (event) => {
+                const checked = event.target.checked;
+                edit((next) => { next.supervisor = Object.assign({}, next.supervisor, { bubble: checked }); });
+              },
+            }),
+            h('span', null, t('showBubble')),
+          ),
+          h('p', { className: 'dsg-status' }, t('showBubbleHint')),
           h('div', { className: 'dsg-label' }, t('displayLabel')),
           h('div', { className: 'dsg-choices' },
             DISPLAYS.map((value) => h('label', {
