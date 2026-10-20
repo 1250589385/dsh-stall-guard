@@ -191,7 +191,15 @@ test('the floating figure renders from the overlay, not the header slot', () => 
   // cannot be moved freely; the floating posture has to live outside that layout.
   assert.match(src, /function FloatingSeat/, 'a dedicated overlay seat must exist');
   assert.match(src, /id: 'stall-guard-floating'/, 'the overlay seat must be registered');
-  assert.match(src, /if \(supervisorOff \|\| floating\) return null/, 'the header seat must render nothing while floating');
+  // The header seat must stand down when the overlay owns the figure, while the overlay
+  // seat must NOT stand down for the same reason — that mistake hid the figure entirely.
+  assert.match(src, /if \(wantsFloat && !forcedFloat\) return null/, 'the header seat must render nothing while floating');
+  assert.doesNotMatch(src, /if \(supervisorOff \|\| floating\) return null/, 'the guard must not fire for the overlay seat');
+});
+
+test('the overlay draws the figure only in the floating posture', () => {
+  // Without this the header and the overlay would both draw it, showing two figures.
+  assert.match(src, /if \(appearance\.place !== 'float'\) return null/, 'the overlay seat must check the posture');
 });
 
 test('the settings panel does not cover the figure', () => {
