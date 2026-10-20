@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-label="Stall Guard">
+  <title>Stall Guard</title>
+  <defs>
+    <linearGradient id="sg-bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5b78ff"/>
+      <stop offset="1" stop-color="#2b46d6"/>
+    </linearGradient>
+    <linearGradient id="sg-body" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#9fb2ff"/>
+      <stop offset="1" stop-color="#4d6bfe"/>
+    </linearGradient>
+    <linearGradient id="sg-ring" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.95"/>
+      <stop offset="1" stop-color="#cfe0ff" stop-opacity="0.75"/>
+    </linearGradient>
+  </defs>
+
+  <!-- rounded square base, DeepSeek blue -->
+  <rect x="4" y="4" width="120" height="120" rx="28" ry="28" fill="url(#sg-bg)"/>
+
+  <!-- stopwatch ring -->
+  <circle cx="64" cy="70" r="30" fill="none" stroke="url(#sg-ring)" stroke-width="7"/>
+  <!-- stopwatch crown + stem -->
+  <rect x="58" y="26" width="12" height="8" rx="3" fill="#ffffff"/>
+  <rect x="61.5" y="33" width="5" height="7" rx="2" fill="#ffffff" opacity="0.85"/>
+  <!-- hands: one at 12, one at 4 o'clock, reading "time is up" -->
+  <path d="M64 70 V50" stroke="#ffffff" stroke-width="6" stroke-linecap="round" fill="none"/>
+  <path d="M64 70 L79 79" stroke="#ffffff" stroke-width="6" stroke-linecap="round" fill="none"/>
+  <circle cx="64" cy="70" r="4.5" fill="#ffffff"/>
+
+  <!-- whale tail breaking the ring on the right: the DeepSeek nod -->
+  <path d="M92 96c9-9 16-8 16 2 0 10-8 11-16 2z" fill="url(#sg-body)"/>
+  <path d="M96 99.5c4.4-4.4 8-4.4 8.6 0-4.2 2.6-7 2.6-8.6 0z" fill="#2b46d6" opacity="0.55"/>
+
+  <!-- alert spark: reads as the wake-up moment without breaking the flat style -->
+  <circle cx="33" cy="41" r="4.5" fill="#ffd166"/>
+  <circle cx="24" cy="30" r="2.6" fill="#ffd166" opacity="0.75"/>
+</svg>
