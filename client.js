@@ -955,7 +955,7 @@ window.__ModuleLoader__.load({
       /* Hidden state: the bubble is not rendered at all, so there is nothing to dim. */
 
       /* ---- overlay panel ---- */
-      '.dsg-panel{position:fixed;top:56px;right:14px;left:auto;z-index:70;box-sizing:border-box;width:min(430px,calc(100vw - 40px));max-height:min(74vh,660px);overflow:hidden;pointer-events:auto;display:flex;flex-direction:column;gap:0;padding:12px;border:1px solid var(--dsw-alias-border-l1,var(--dsh-border,rgba(255,255,255,.12)));border-radius:var(--dsw-radius-panel,12px);background:var(--dsw-alias-bg-overlay,var(--dsh-surface,rgba(20,22,28,.96)));box-shadow:var(--dsw-elevation-soft,0 8px 28px rgba(0,0,0,.22));color:var(--dsw-alias-label-primary,var(--dsh-text-primary,#e6e6e6));font:inherit;font-size:12px;line-height:18px}',
+      '.dsg-panel{position:fixed;top:118px;right:14px;left:auto;z-index:70;box-sizing:border-box;width:min(430px,calc(100vw - 40px));max-height:min(74vh,660px);overflow:hidden;pointer-events:auto;display:flex;flex-direction:column;gap:0;padding:12px;border:1px solid var(--dsw-alias-border-l1,var(--dsh-border,rgba(255,255,255,.12)));border-radius:var(--dsw-radius-panel,12px);background:var(--dsw-alias-bg-overlay,var(--dsh-surface,rgba(20,22,28,.96)));box-shadow:var(--dsw-elevation-soft,0 8px 28px rgba(0,0,0,.22));color:var(--dsw-alias-label-primary,var(--dsh-text-primary,#e6e6e6));font:inherit;font-size:12px;line-height:18px}',
       '.dsg-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex:0 0 auto;padding-bottom:8px}',
       /* The title bar holds Save and Close now, so the title must not push them out. */
       '.dsg-title{flex:0 1 auto;min-width:0;margin:0;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
@@ -1040,7 +1040,7 @@ window.__ModuleLoader__.load({
       '.dsg-offTab{display:block;width:100%;height:100%;border-radius:50%}',
       '.dsg-orb[data-floating="yes"]{box-shadow:0 2px 10px rgba(0,0,0,.28);background:var(--dsw-alias-bg-overlay,var(--dsh-surface,rgba(20,22,28,.9)));border:1px solid var(--dsw-alias-border-l1,var(--dsh-border,rgba(255,255,255,.12)))}',
       '.dsg-orb[data-dragging="yes"]{transition:none!important;cursor:grabbing}',
-      '.dsg-seat[data-floating="yes"]{position:fixed}',
+      '.dsg-seat[data-floating="yes"]{position:fixed;z-index:75}',
       /* Only visible while the supervisor is hidden: a 14px grab handle in the corner. */
       '.dsg-restoreTab{position:fixed;right:10px;bottom:10px;z-index:67;width:14px;height:14px;padding:0;border:1px solid var(--dsw-alias-border-l1,var(--dsh-border,rgba(255,255,255,.2)));border-radius:50%;background:var(--dsw-alias-label-tertiary,var(--dsh-text-muted,#8b93a7));opacity:.4;cursor:pointer;transition:opacity .15s ease,transform .15s ease}',
       '.dsg-restoreTab:hover,.dsg-restoreTab:focus-visible{opacity:1;transform:scale(1.35);background:var(--dsw-alias-brand-primary,var(--dsh-accent,#4d6bfe))}',
@@ -1238,7 +1238,8 @@ window.__ModuleLoader__.load({
 
       /* Float placement: drag moves the control, and the position is clamped into the
        * viewport on release so a window resize cannot strand it off-screen. */
-      const floating = appearance.place === 'float';
+      // The overlay seat forces the floating posture; the header seat reads the setting.
+      const floating = props.forcePlace === 'float' || appearance.place === 'float';
       const startDrag = useCallback((event) => {
         if (!floating) return;
         if (event.button !== undefined && event.button !== 0) return;
@@ -1254,7 +1255,9 @@ window.__ModuleLoader__.load({
           setDragging(true);
           const nextX = Math.max(0, Math.min(window.innerWidth - rect.width, moveEvent.clientX - offsetX));
           const nextY = Math.max(0, Math.min(window.innerHeight - rect.height, moveEvent.clientY - offsetY));
-          store.setAppearance({ ...readAppearance(), x: Math.round(nextX), y: Math.round(nextY) });
+          // Read from the store, not localStorage: a per-frame disk read would race with
+          // the in-memory value and drop intermediate positions.
+          store.setAppearance({ ...store.getAppearance(), x: Math.round(nextX), y: Math.round(nextY) });
         };
         const onUp = () => {
           window.removeEventListener('pointermove', onMove);
@@ -1267,10 +1270,10 @@ window.__ModuleLoader__.load({
         event.preventDefault();
       }, [floating]);
 
-      // Hidden: the header renders nothing. A restore tab is drawn by the overlay seat
-      // instead, because the header does not exist in a blank session and the user would
-      // otherwise have no way back in.
-      if (supervisorOff) return null;
+      // Hidden, or drawn by the overlay because it floats: the header renders nothing in
+      // both cases. A floating figure inside the header's flow would push the header row
+      // around as it moved, which is exactly the bug this split fixes.
+      if (supervisorOff || floating) return null;
 
       const label = t('supervisor') + ' — ' + t(MODE_KEY[mode]);
       const size = appearance.size;
@@ -1339,6 +1342,22 @@ window.__ModuleLoader__.load({
           }, message)
           : null,
       );
+    }
+
+    /**
+     * The floating posture, rendered in the frame-wide overlay.
+     *
+     * `shell.overlay` is outside every column and scroll container, so an absolutely
+     * positioned figure there cannot affect the header's layout. The component is shared
+     * with the header seat; only the posture differs.
+     */
+    function FloatingSeat(props) {
+      const t = useTranslate(props);
+      const snapshot = useStore();
+      useEffect(() => store.start(), []);
+      if (snapshot.config === null) return null;
+      if (snapshot.config.supervisor.show === false) return null;
+      return h(SupervisorSeat, { t, forcePlace: 'float' });
     }
 
     /* ------------------------------------------------------------ the panel */
@@ -1978,6 +1997,15 @@ window.__ModuleLoader__.load({
           locale: NS,
           inject: () => ({}),
         }, PanelSeat));
+
+        // The floating posture lives in the overlay so it cannot disturb the header row.
+        ctx.slots.inject('shell.overlay', () => ctx.slots.register({
+          name: 'shell.overlay',
+          id: 'stall-guard-floating',
+          order: 69,
+          locale: NS,
+          inject: () => ({}),
+        }, FloatingSeat));
 
         // The way back when the supervisor is hidden.
         ctx.slots.inject('shell.overlay', () => ctx.slots.register({
