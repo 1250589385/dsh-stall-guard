@@ -1,0 +1,8 @@
+# dsh-stall-guard bundle patch.
+#
+# One Host row. The Host half installs the tools/execute timeout wrapper, owns the
+# stall state, and serves the two JSON routes; the Client half renders the
+# supervisor in the conversation header and its settings panel.
+- insert:
+    - id: stall-guard
+      name: dsh-stall-guard
