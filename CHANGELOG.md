@@ -5,6 +5,17 @@
 格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [0.1.6] - 2026-10-21
+
+### 变更
+
+- **优化 npm 标签，让插件更容易被搜到**。补上了社区通用入口标签
+  `plugin` / `deepseek` / `harness`（此前只有 `dsh-plugin` / `deepseek-harness`，
+  只搜 `plugin` 或 `deepseek` 的人找不到本插件）。
+- 新增 `monitor` `network` `retry` `reliability` `web`；
+  去掉 `gitee` `stall` `agent`（前两个零人检索，`agent` 与本插件功能不符，
+  加上去只会污染搜索结果）。
+
 ## [0.1.5] - 2026-10-21
 
 ### 界面
