@@ -157,3 +157,13 @@ test('hiding the supervisor does not disturb the guard settings', () => {
   assert.equal(config.enabled, true);
 });
 
+
+test('the bubble can be turned off without hiding the figure', () => {
+  // A user may want the animation but not the sentence: the two switches are independent.
+  assert.equal(defaults().supervisor.bubble, true);
+  const hidden = validateConfig({ supervisor: { bubble: false } }).config.supervisor;
+  assert.equal(hidden.bubble, false);
+  assert.equal(hidden.show, true, 'hiding the bubble must not hide the figure');
+  // An older file has no bubble key; the bubble stays on.
+  assert.equal(validateConfig({ supervisor: { display: 'dot' } }).config.supervisor.bubble, true);
+});
