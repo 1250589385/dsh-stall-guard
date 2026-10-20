@@ -5,6 +5,20 @@
 格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [0.1.4] - 2026-10-21
+
+### 修复
+
+- **切到「浮动」后图标消失**：0.1.3 把浮动态拆到 overlay 渲染时，标题栏座位的守卫
+  `if (supervisorOff || floating) return null` 同时也把 overlay 座位挡掉了 ——
+  因为 overlay 座位收到的 `floating` 恒为 true。结果是图标彻底不画。
+  现在区分「这个座位要画的形态（forcedFloat）」与「用户选择的形态（wantsFloat）」：
+  标题栏在 `wantsFloat && !forcedFloat` 时让位，overlay 座位永不让位。
+- **两个座位可能同时画图标**：overlay 座位现在只在 `place === 'float'` 时渲染。
+- 外观状态改为共享 `useAppearance()` 钩子（`useSyncExternalStore`），
+  三个消费点（标题栏、浮动态、面板）对同一份记录同步重绘，
+  修掉面板改尺寸时图标不实时变化的问题。
+
 ## [0.1.3] - 2026-10-21
 
 ### 修复
