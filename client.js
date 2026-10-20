@@ -931,6 +931,9 @@ window.__ModuleLoader__.load({
       /* ---- supervisor seat ---- */
       '.dsg-seat{position:relative;display:inline-flex;flex:none;align-items:center;justify-content:center;pointer-events:auto;overflow:visible}',
       '.dsg-orb{box-sizing:border-box;display:inline-flex;position:relative;align-items:center;justify-content:center;margin:0;padding:0;border:none;background:transparent;font-family:inherit;cursor:pointer;overflow:visible;border-radius:var(--dsw-radius-sm,6px);pointer-events:auto}',
+      /* The floating figure is a tank: clip the water to its frame and stack the whale above it. */
+      '.dsg-orb[data-floating="yes"]{overflow:hidden}',
+      '.dsg-orb[data-floating="yes"]>svg{position:relative;z-index:1}',
       '.dsg-orb:focus-visible{outline:2px solid var(--dsw-alias-brand-primary,#4d6bfe);outline-offset:2px}',
       '.dsg-orb[data-display="dot"]{width:22px;height:22px}',
       '.dsg-orb[data-display="icon"]{width:24px;height:24px}',
@@ -1052,6 +1055,37 @@ window.__ModuleLoader__.load({
       '@keyframes dsg-glow{0%,100%{filter:drop-shadow(0 0 0 rgba(236,19,19,0))}50%{filter:drop-shadow(0 0 5px rgba(236,19,19,.85))}}',
       '@keyframes dsg-sway{0%,100%{transform:rotate(-6deg)}50%{transform:rotate(6deg)}}',
       '@keyframes dsg-bounce-big{0%,100%{transform:translateY(0) scale(1)}30%{transform:translateY(-8px) scale(1.06)}60%{transform:translateY(0) scale(1)}80%{transform:translateY(-3px) scale(1)}}',
+      /* ---- aquarium: the floating posture reads as a fish tank ---- */
+      /* Three layers behind the whale: a translucent water body, a caustic shimmer that
+       * suggests light through water, and bubbles rising on their own keyframes. All are
+       * pointer-events:none so the tank never eats a click meant for the figure. */
+      '.dsg-tank{position:absolute;inset:0;display:block;pointer-events:none;border-radius:var(--dsw-radius-sm,10px);overflow:hidden;background:linear-gradient(180deg,rgba(86,140,220,.28) 0%,rgba(40,88,170,.42) 60%,rgba(18,46,110,.5) 100%);border:1px solid rgba(150,200,255,.35);box-shadow:inset 0 2px 10px rgba(0,20,60,.45),0 2px 12px rgba(0,0,0,.32)}',
+      '.dsg-tank::before{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse 60% 40% at 50% 0%,rgba(190,225,255,.35),transparent 70%);mix-blend-mode:screen;animation:dsg-caustic 7s ease-in-out infinite}',
+      '.dsg-tank::after{content:"";position:absolute;left:0;right:0;top:-40%;height:34%;pointer-events:none;background:linear-gradient(180deg,transparent,rgba(150,205,255,.22),transparent);animation:dsg-wave 5.5s linear infinite}',
+      '.dsg-tank-waterline{position:absolute;left:0;right:0;top:0;height:2px;pointer-events:none;background:linear-gradient(90deg,transparent,rgba(190,230,255,.75),transparent);opacity:.85;animation:dsg-waterline 3.6s ease-in-out infinite}',
+      '.dsg-tank-bubble{position:absolute;bottom:6%;border-radius:50%;pointer-events:none;background:radial-gradient(circle at 32% 28%,rgba(255,255,255,.9),rgba(180,220,255,.35) 55%,rgba(120,180,255,.18) 100%);box-shadow:0 0 3px rgba(180,220,255,.5);animation:dsg-rise linear infinite}',
+      '@keyframes dsg-rise{0%{transform:translateY(0) scale(.7);opacity:0}12%{opacity:.85}70%{opacity:.7}100%{transform:translateY(-260%) scale(1.05);opacity:0}}',
+      '@keyframes dsg-caustic{0%,100%{opacity:.5;transform:translateX(-4%)}50%{opacity:.85;transform:translateX(4%)}}',
+      '@keyframes dsg-wave{0%{transform:translateY(0)}100%{transform:translateY(320%)}}',
+      '@keyframes dsg-waterline{0%,100%{opacity:.55}50%{opacity:1}}',
+      /* One-shot splash for an alarm: droplets fly outward, then the class is removed. */
+      '.dsg-splash{position:absolute;inset:0;pointer-events:none;border-radius:50%;border:2px solid rgba(190,232,255,.85);opacity:0;animation:dsg-splash-out .62s ease-out forwards}',
+      '.dsg-splash-drop{position:absolute;left:50%;top:50%;width:3px;height:3px;border-radius:50%;pointer-events:none;background:rgba(215,240,255,.95);animation:dsg-drop-out .62s ease-out forwards}',
+      '@keyframes dsg-splash-out{0%{opacity:.9;transform:scale(.35);border-width:3px}100%{opacity:0;transform:scale(1.15);border-width:1px}}',
+      '@keyframes dsg-drop-out{0%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(.4)}}',
+      '@media (prefers-reduced-motion:reduce){.dsg-tank::before,.dsg-tank::after,.dsg-tank-waterline,.dsg-tank-bubble,.dsg-splash,.dsg-splash-drop{animation:none}}',
+      /* ---- the whale: gentle when calm, a flick when alarmed ---- */
+      '.dsg-avatar{overflow:visible}',
+      '.dsg-avatar[data-mode="idle"] .dsg-whale-tail{animation:dsg-whale-drift 5.4s ease-in-out infinite;transform-origin:19.6px 13px}',
+      '.dsg-avatar[data-mode="watching"] .dsg-whale-tail{animation:dsg-whale-swish 3.2s ease-in-out infinite;transform-origin:19.6px 13px}',
+      '.dsg-avatar[data-mode="alert"] .dsg-whale-tail{animation:dsg-whale-flick .3s ease-in-out infinite;transform-origin:19.6px 13px}',
+      '.dsg-avatar[data-mode="watching"] .dsg-whale-fin{animation:dsg-fin-wave 2.6s ease-in-out infinite;transform-origin:14px 8px}',
+      '.dsg-avatar[data-mode="alert"] .dsg-whale-fin{animation:dsg-fin-wave .8s ease-in-out infinite;transform-origin:14px 8px}',
+      '@keyframes dsg-whale-drift{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(5deg)}}',
+      '@keyframes dsg-whale-swish{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(9deg)}}',
+      '@keyframes dsg-whale-flick{0%,100%{transform:rotate(-22deg) scaleY(1)}50%{transform:rotate(22deg) scaleY(.85)}}',
+      '@keyframes dsg-fin-wave{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(6deg)}}',
+      '@media (prefers-reduced-motion:reduce){.dsg-whale-tail,.dsg-whale-fin{animation:none!important}}',
       '@keyframes dsg-bubble-in{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}',
       '@media (prefers-reduced-motion:reduce){.dsg-orb[data-mode] .dsg-dot,.dsg-orb[data-mode] .dsg-glyph,.dsg-orb[data-mode] .dsg-avatar,.dsg-bubble{animation:none}}',
     ].join('\n');
@@ -1101,6 +1135,21 @@ window.__ModuleLoader__.load({
      * 28px original DeepSeek-blue whale. Eyes are closed with a line while the
      * supervisor is idle and open dots otherwise; nothing external is loaded.
      */
+    /**
+     * A fish, drawn for the tank.
+     *
+     * Three moods, driven by `mode`:
+     *   idle     - slow bob, closed eye, tail drifting
+     *   watching - upright, eye open, gentle fin motion
+     *   alert    - red body, mouth open, fast tail flick and a small scale burst
+     */
+    /**
+     * The whale, as originally drawn.
+     *
+     * A plump 28x28 whale: round body, raised tail fluke, top fin, one eye, a small smile.
+     * The user preferred this silhouette over later redraws, so it is kept verbatim; only
+     * class names are added to the two fins so the tank animations can target them.
+     */
     function WhaleGlyph(props) {
       const size = props.size || 28;
       const asleep = props.mode === 'idle';
@@ -1115,14 +1164,17 @@ window.__ModuleLoader__.load({
         xmlns: 'http://www.w3.org/2000/svg',
         'aria-hidden': 'true',
         focusable: 'false',
+        'data-mode': props.mode || 'idle',
       },
         /* tail fluke */
         h('path', {
+          className: 'dsg-whale-tail',
           d: 'M19.6 12.4c2.9-3.4 5.1-3.1 5.1.5 0 3.3-2.4 3.7-5.1.6z',
           fill: fin,
         }),
         /* top fin */
         h('path', {
+          className: 'dsg-whale-fin',
           d: 'M11.8 6.4c2.3-2.5 4.4-2.5 4.8 1.1-2.1 1-3.9.6-4.8-1.1z',
           fill: BLUE_LIGHT,
         }),
@@ -1223,12 +1275,22 @@ window.__ModuleLoader__.load({
       const [bubbleBelow, setBubbleBelow] = useState(false);
       const appearance = useAppearance();
       const [dragging, setDragging] = useState(false);
+      /* The splash is a one-shot: raised when the alarm starts, cleared on animation end. */
+      const [splash, setSplash] = useState(false);
+      const previousModeRef = useRef(null);
 
       useEffect(() => store.start(), []);
 
       const config = snapshot.config;
       const supervisorOff = config !== null && config.supervisor.show === false;
       const mode = snapshot.state === null ? 'idle' : snapshot.state.supervisor.mode;
+      /* Raised once per alarm. Declared after `mode` on purpose: a hook that reads a
+       * `const` before its declaration is a TDZ error that takes the whole module down. */
+      useEffect(() => {
+        if (previousModeRef.current === mode) return;
+        previousModeRef.current = mode;
+        if (mode === 'alert') setSplash(true);
+      }, [mode]);
       const display = config === null ? 'avatar' : config.supervisor.display;
       const message = snapshot.state === null ? '' : snapshot.state.supervisor.message;
       const bubbleOn = config === null ? true : config.supervisor.bubble !== false;
@@ -1305,7 +1367,9 @@ window.__ModuleLoader__.load({
           top: appearance.y < 0 ? 'auto' : appearance.y + 'px',
           right: appearance.x < 0 ? '14px' : 'auto',
           bottom: appearance.y < 0 ? '96px' : 'auto',
-          zIndex: 68,
+          /* Above the settings panel (70): the figure must stay visible and draggable
+           * even when it is dragged under the panel. */
+          zIndex: 75,
         }
         : undefined;
 
@@ -1334,7 +1398,32 @@ window.__ModuleLoader__.load({
           display === 'dot' ? h('span', { className: 'dsg-dot' }) : null,
           display === 'icon' ? h(ShieldGlyph, { size: Math.round(size * 0.64) }) : null,
           display === 'avatar' ? h(WhaleGlyph, { size: Math.round(size * 0.82), mode }) : null,
+        /* One-shot splash per alarm. `onAnimationEnd` clears it so it never loops. */
+        splash
+          ? h('span', { className: 'dsg-splash', 'aria-hidden': 'true',
+            onAnimationEnd: () => setSplash(false),
+          },
+            h('span', { className: 'dsg-splash-drop', style: { '--dx': '-14px', '--dy': '-16px' } }),
+            h('span', { className: 'dsg-splash-drop', style: { '--dx': '13px', '--dy': '-18px' } }),
+            h('span', { className: 'dsg-splash-drop', style: { '--dx': '-16px', '--dy': '8px' } }),
+            h('span', { className: 'dsg-splash-drop', style: { '--dx': '17px', '--dy': '6px' } }),
+            h('span', { className: 'dsg-splash-drop', style: { '--dx': '0px', '--dy': '-22px' } }),
+          )
+          : null,
         ),
+        /* Aquarium: only in the floating posture, where the rounded frame reads as a tank.
+         * Everything here paints behind the whale and ignores pointer events. */
+        floating
+          ? h('span', { className: 'dsg-tank', 'aria-hidden': 'true' },
+            h('span', { className: 'dsg-tank-waterline' }),
+            h('span', { className: 'dsg-tank-bubble', style: { width: '15%', height: '15%', left: '16%', animationDuration: '4.2s', animationDelay: '0s' } }),
+            h('span', { className: 'dsg-tank-bubble', style: { width: '11%', height: '11%', left: '33%', animationDuration: '5.6s', animationDelay: '1.1s' } }),
+            h('span', { className: 'dsg-tank-bubble', style: { width: '18%', height: '18%', left: '51%', animationDuration: '4.8s', animationDelay: '0.4s' } }),
+            h('span', { className: 'dsg-tank-bubble', style: { width: '10%', height: '10%', left: '69%', animationDuration: '6.2s', animationDelay: '2.0s' } }),
+            h('span', { className: 'dsg-tank-bubble', style: { width: '14%', height: '14%', left: '83%', animationDuration: '5.1s', animationDelay: '1.6s' } })
+          )
+          : null,
+
         /* The bubble is a SIBLING of the button, not a child: interactive content inside a
          * button is invalid and browsers route its clicks unpredictably, and content painted
          * outside the button box is not part of its hit area. */
