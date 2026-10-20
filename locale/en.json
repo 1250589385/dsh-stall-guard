@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Stall Guard",
+    "description": "Per-tool-type timeout guard with automatic fallback: page fetches and web searches that stall switch to another way of finding the answer, while writes and long tasks are only flagged, never interrupted. A DeepSeek supervisor figure wakes up only on a real stall — as a status dot, a bouncing icon, or a blue whale avatar that opens the settings panel."
+  }
+}
