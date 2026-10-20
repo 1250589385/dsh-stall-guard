@@ -208,7 +208,8 @@ window.__ModuleLoader__.load({
       showSupervisor: 'Show the supervisor',
       showSupervisorHint: 'Off hides the figure but keeps the guard running; a small tab stays in the corner so you can switch it back.',
       showBubble: 'Show the text bubble on a stall',
-      showBubbleHint: 'Off keeps the bouncing animation but hides the sentence. Click the figure or the bubble to open settings.',
+      showBubbleHint: 'Off keeps the bouncing animation but hides the sentence. Click the bubble to dismiss it; click the figure for settings.',
+      dismissBubble: 'Dismiss this notice',
       supervisorHiddenHint: 'Supervisor hidden — click to open settings',
       appearanceLabel: 'Icon appearance (this browser only)',
       iconSize: 'Size',
@@ -299,7 +300,8 @@ window.__ModuleLoader__.load({
       showSupervisor: '\u663e\u793a\u76d1\u7763\u5458',
       showSupervisorHint: '\u5173\u6389\u540e\u4e0d\u518d\u663e\u793a\u5f62\u8c61\uff0c\u4f46\u5b88\u536b\u4ecd\u5728\u8fd0\u884c\uff1b\u53f3\u4e0b\u89d2\u4f1a\u7559\u4e00\u4e2a\u5c0f\u70b9\uff0c\u70b9\u5b83\u53ef\u4ee5\u518d\u6253\u5f00\u3002',
       showBubble: '\u5361\u987f\u65f6\u663e\u793a\u6587\u5b57\u6c14\u6ce1',
-      showBubbleHint: '\u5173\u6389\u4ecd\u4f1a\u8df3\u52a8\uff0c\u4f46\u4e0d\u663e\u793a\u6587\u5b57\u3002\u70b9\u56fe\u6807\u6216\u6c14\u6ce1\u90fd\u80fd\u6253\u5f00\u8bbe\u7f6e\u3002',
+      showBubbleHint: '\u5173\u6389\u4ecd\u4f1a\u8df3\u52a8\uff0c\u4f46\u4e0d\u663e\u793a\u6587\u5b57\u3002\u70b9\u6c14\u6ce1\u53ef\u4ee5\u5173\u6389\u5b83\uff1b\u70b9\u56fe\u6807\u6253\u5f00\u8bbe\u7f6e\u3002',
+      dismissBubble: '\u5173\u6389\u8fd9\u6761\u63d0\u793a',
       supervisorHiddenHint: '\u76d1\u7763\u5458\u5df2\u9690\u85cf \u2014 \u70b9\u51fb\u6253\u5f00\u8bbe\u7f6e',
       appearanceLabel: '\u56fe\u6807\u5916\u89c2\uff08\u4ec5\u672c\u6d4f\u89c8\u5668\uff09',
       iconSize: '\u5927\u5c0f',
@@ -1318,16 +1320,20 @@ window.__ModuleLoader__.load({
             'data-place': bubbleBelow ? 'below' : 'above',
             role: 'button',
             tabIndex: 0,
-            title: t('openPanel'),
+            title: t('dismissBubble'),
+            'aria-label': t('dismissBubble'),
+            /* Pressing the notice dismisses it; it does not navigate. Opening the settings
+             * panel stays on the figure, so the two affordances cannot be confused. */
             onClick: (event) => {
               event.stopPropagation();
-              store.activate();
+              event.preventDefault();
+              void store.acknowledge();
             },
             onKeyDown: (event) => {
               if (event.key === 'Enter' || event.key === ' ') {
                 event.preventDefault();
                 event.stopPropagation();
-                store.activate();
+                void store.acknowledge();
               }
             },
           }, message)
