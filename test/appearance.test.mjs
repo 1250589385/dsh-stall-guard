@@ -185,3 +185,30 @@ test('the bubble has its own switch', () => {
   assert.match(src, /supervisor\.bubble !== false/, 'the client must read the bubble setting');
   assert.match(src, /t\('showBubble'\)/, 'the panel must expose the toggle');
 });
+
+test('the floating figure renders from the overlay, not the header slot', () => {
+  // Reported: dragging the figure pushed the header row around. A flow item in the header
+  // cannot be moved freely; the floating posture has to live outside that layout.
+  assert.match(src, /function FloatingSeat/, 'a dedicated overlay seat must exist');
+  assert.match(src, /id: 'stall-guard-floating'/, 'the overlay seat must be registered');
+  assert.match(src, /if \(supervisorOff \|\| floating\) return null/, 'the header seat must render nothing while floating');
+});
+
+test('the settings panel does not cover the figure', () => {
+  // Reported: resizing showed no live preview because the panel sat on top of the icon.
+  const panelRule = /\.dsg-panel\{[^}]*\}/.exec(src);
+  assert.ok(panelRule, 'the panel needs a rule');
+  const top = /top:(\d+)px/.exec(panelRule[0]);
+  assert.ok(top, 'the panel must declare a top offset');
+  assert.ok(Number(top[1]) >= 100, `top ${top[1]}px still overlaps the header figure`);
+});
+
+test('a floating figure stays above the panel so it can be watched while adjusting', () => {
+  const floatRule = /\.dsg-seat\[data-floating="yes"\]\{[^}]*\}/.exec(src);
+  assert.ok(floatRule, 'the floating seat needs a rule');
+  const z = /z-index:(\d+)/.exec(floatRule[0]);
+  assert.ok(z, 'the floating seat needs a stacking order');
+  const panelRule = /\.dsg-panel\{[^}]*\}/.exec(src);
+  const pz = /z-index:(\d+)/.exec(panelRule[0]);
+  assert.ok(Number(z[1]) > Number(pz[1]), 'the figure must be above the panel');
+});
