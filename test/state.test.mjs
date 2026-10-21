@@ -92,13 +92,17 @@ test('a switch raises its own counter and records the fallback', () => {
   assert.equal(snapshot.supervisor.fallbackOk, true);
 });
 
-test('an alert outranks in-flight work in the derived posture', () => {
+test('a new call clears the previous alert: the agent has moved on', () => {
+  // Requested behaviour: once the stalled work is over and the agent starts its next call,
+  // the notice is stale and must clear by itself instead of waiting for a click.
   const { monitor } = monitorAt();
   monitor.begin({ callId: 'c1', tool: 'bash', kind: 'exec', timeoutMs: 30000 });
   monitor.stall({ callId: 'c1', tool: 'bash', kind: 'exec', elapsedMs: 30000, timeoutMs: 30000, action: 'notify', level: LEVEL_NOTICE });
-  // A second call starts while the alert is still unacknowledged.
+  monitor.end('c1');
+  assert.equal(monitor.snapshot().supervisor.mode, 'alert', 'the alert waits for the user once work stops');
+
   monitor.begin({ callId: 'c2', tool: 'read', kind: 'read', timeoutMs: 20000 });
-  assert.equal(monitor.snapshot().supervisor.mode, 'alert');
+  assert.equal(monitor.snapshot().supervisor.mode, 'watching', 'the previous alert must be gone');
 });
 
 test('refine keeps the alert level from regressing', () => {
@@ -244,4 +248,58 @@ test('no published field is ever NaN or undefined', () => {
   for (const key of ['at', 'tool', 'kind', 'elapsedMs', 'timeoutMs', 'action', 'level']) {
     assert.ok(wire.recent[0][key] !== null && wire.recent[0][key] !== undefined, `recent[0].${key} went missing on the wire`);
   }
+});
+
+test('an unacknowledged alert expires after its lifetime', () => {
+  // Without this the figure stays lit for the rest of the session on a busy machine.
+  const clock = createClock(1_700_000_000_000);
+  const monitor = new StallMonitor({ now: clock.now, alertSeconds: 5 });
+  monitor.begin({ callId: 'c1', tool: 'bash', kind: 'exec', timeoutMs: 1000 });
+  monitor.stall({ callId: 'c1', tool: 'bash', kind: 'exec', elapsedMs: 1000, timeoutMs: 1000, action: 'notify', level: LEVEL_NOTICE, message: 'x' });
+  monitor.end('c1');
+  assert.equal(monitor.snapshot().supervisor.mode, 'alert');
+
+  clock.advance(4_000);
+  monitor.settleAlert();
+  assert.equal(monitor.snapshot().supervisor.mode, 'alert', 'still inside the lifetime');
+
+  clock.advance(2_000);
+  monitor.settleAlert();
+  assert.notEqual(monitor.snapshot().supervisor.mode, 'alert', 'expired alerts must clear themselves');
+  assert.equal(monitor.snapshot().recent.length, 1, 'expiry must not erase the history');
+});
+
+test('a lifetime of zero keeps the alert until acknowledged', () => {
+  const clock = createClock(1_700_000_000_000);
+  const monitor = new StallMonitor({ now: clock.now, alertSeconds: 0 });
+  monitor.begin({ callId: 'c1', tool: 'bash', kind: 'exec', timeoutMs: 1000 });
+  monitor.stall({ callId: 'c1', tool: 'bash', kind: 'exec', elapsedMs: 1000, timeoutMs: 1000, action: 'notify', level: LEVEL_NOTICE });
+  monitor.end('c1');
+
+  clock.advance(10 * 60 * 1000);
+  monitor.settleAlert();
+  assert.equal(monitor.snapshot().supervisor.mode, 'alert', '0 disables the timer');
+
+  monitor.acknowledge();
+  clock.advance(20_000);
+  monitor.settleAlert();
+  assert.equal(monitor.snapshot().supervisor.mode, 'idle');
+});
+
+test('the alert carries an expiry on the wire', () => {
+  const clock = createClock(1_700_000_000_000);
+  const monitor = new StallMonitor({ now: clock.now, alertSeconds: 30 });
+  monitor.begin({ callId: 'c1', tool: 'bash', kind: 'exec', timeoutMs: 1000 });
+  monitor.stall({ callId: 'c1', tool: 'bash', kind: 'exec', elapsedMs: 1000, timeoutMs: 1000, action: 'notify', level: LEVEL_NOTICE });
+  const snapshot = monitor.snapshot();
+  assert.ok(snapshot.supervisor.expiresAt > clock.now(), 'the expiry must be published');
+});
+
+test('setAlertSeconds changes the lifetime at runtime', () => {
+  const clock = createClock(1_700_000_000_000);
+  const monitor = new StallMonitor({ now: clock.now, alertSeconds: 60 });
+  monitor.setAlertSeconds(3);
+  assert.equal(monitor.alertSeconds, 3);
+  monitor.setAlertSeconds(0);
+  assert.equal(monitor.alertSeconds, 0, 'zero is a valid "never expire" value');
 });
