@@ -33,7 +33,11 @@ export function apply(ctx) {
   const store = new ConfigStore();
   store.load();
 
-  const monitor = new StallMonitor();
+  // The monitor's alert lifetime follows the settings file, and is refreshed whenever the
+  // config is written so a changed value applies without a restart.
+  const monitor = new StallMonitor({ alertSeconds: store.get().supervisor.alertSeconds });
+  const syncAlertLifetime = () => monitor.setAlertSeconds(store.get().supervisor.alertSeconds);
+  syncAlertLifetime();
   const locale = () => localeId(ctx);
 
   ctx.effect(() => installGuard(ctx, { config: store, monitor, locale }), 'stall-guard: timeout wrapper');
@@ -42,7 +46,7 @@ export function apply(ctx) {
   // composition) simply has no settings surface instead of failing to activate.
   ctx.inject(['webServer'], (scoped) => {
     scoped.effect(
-      () => registerRoutes(scoped, { config: store, monitor, locale }),
+      () => registerRoutes(scoped, { config: store, monitor, locale, onChange: syncAlertLifetime }),
       'stall-guard: settings routes',
     );
   });
