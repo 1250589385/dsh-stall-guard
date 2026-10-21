@@ -103,6 +103,8 @@ window.__ModuleLoader__.load({
       scenes: defaultScenes(),
       supervisor: {
         show: true,
+        bubble: true,
+        alertSeconds: 30,
         display: 'avatar',
       },
     };
@@ -210,6 +212,8 @@ window.__ModuleLoader__.load({
       showBubble: 'Show the text bubble on a stall',
       showBubbleHint: 'Off keeps the bouncing animation but hides the sentence. Click the bubble to dismiss it; click the figure for settings.',
       dismissBubble: 'Dismiss this notice',
+      alertSeconds: 'Auto-clear after (s)',
+      alertSecondsHint: 'The notice clears itself when the agent starts its next call, or after this many seconds. 0 = wait for me to dismiss it.',
       supervisorHiddenHint: 'Supervisor hidden — click to open settings',
       appearanceLabel: 'Icon appearance (this browser only)',
       iconSize: 'Size',
@@ -302,6 +306,8 @@ window.__ModuleLoader__.load({
       showBubble: '\u5361\u987f\u65f6\u663e\u793a\u6587\u5b57\u6c14\u6ce1',
       showBubbleHint: '\u5173\u6389\u4ecd\u4f1a\u8df3\u52a8\uff0c\u4f46\u4e0d\u663e\u793a\u6587\u5b57\u3002\u70b9\u6c14\u6ce1\u53ef\u4ee5\u5173\u6389\u5b83\uff1b\u70b9\u56fe\u6807\u6253\u5f00\u8bbe\u7f6e\u3002',
       dismissBubble: '\u5173\u6389\u8fd9\u6761\u63d0\u793a',
+      alertSeconds: '\u591a\u5c11\u79d2\u540e\u81ea\u52a8\u6d88\u5931',
+      alertSecondsHint: '\u667a\u80fd\u4f53\u5f00\u59cb\u4e0b\u4e00\u6b65\u65f6\u4f1a\u81ea\u52a8\u6d88\u5931\uff1b\u6216\u8005\u8fc7\u4e86\u8fd9\u4e48\u591a\u79d2\u540e\u6d88\u5931\u3002\u586b 0 = \u4e00\u76f4\u7b49\u6211\u70b9\u6389\u3002',
       supervisorHiddenHint: '\u76d1\u7763\u5458\u5df2\u9690\u85cf \u2014 \u70b9\u51fb\u6253\u5f00\u8bbe\u7f6e',
       appearanceLabel: '\u56fe\u6807\u5916\u89c2\uff08\u4ec5\u672c\u6d4f\u89c8\u5668\uff09',
       iconSize: '\u5927\u5c0f',
@@ -503,6 +509,7 @@ window.__ModuleLoader__.load({
         supervisor: {
           show: sup.show !== false,
           bubble: sup.bubble !== false,
+          alertSeconds: intWithin(sup.alertSeconds, 30, 0, 3600),
           display: pick(sup.display, DISPLAYS, 'avatar'),
         },
       };
@@ -866,6 +873,7 @@ window.__ModuleLoader__.load({
         supervisor: {
           show: source.supervisor.show !== false,
           bubble: source.supervisor.bubble !== false,
+          alertSeconds: toSecondsText(source.supervisor.alertSeconds),
           display: source.supervisor.display,
         },
       };
@@ -914,6 +922,7 @@ window.__ModuleLoader__.load({
         supervisor: {
           show: draft.supervisor.show !== false,
           bubble: draft.supervisor.bubble !== false,
+          alertSeconds: intWithin(draft.supervisor.alertSeconds, 30, 0, 3600),
           display: pick(draft.supervisor.display, DISPLAYS, 'avatar'),
         },
       };
@@ -1878,6 +1887,23 @@ window.__ModuleLoader__.load({
             h('span', null, t('showBubble')),
           ),
           h('p', { className: 'dsg-status' }, t('showBubbleHint')),
+          h('div', { className: 'dsg-field' },
+            h('span', { className: 'dsg-label dsg-shrink' }, t('alertSeconds')),
+            h('input', {
+              className: 'dsg-input dsg-mono',
+              type: 'number',
+              min: 0,
+              max: 3600,
+              step: 5,
+              value: draft.supervisor.alertSeconds,
+              'aria-label': t('alertSeconds'),
+              onChange: (event) => {
+                const value = event.target.value;
+                edit((next) => { next.supervisor = Object.assign({}, next.supervisor, { alertSeconds: value }); });
+              },
+            }),
+          ),
+          h('p', { className: 'dsg-status' }, t('alertSecondsHint')),
           h('div', { className: 'dsg-label' }, t('displayLabel')),
           h('div', { className: 'dsg-choices' },
             DISPLAYS.map((value) => h('label', {
