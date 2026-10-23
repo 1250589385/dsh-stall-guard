@@ -17,6 +17,7 @@ import {
   SCENE_SECONDS_MIN,
   defaultScenes,
   normalizeScenes,
+  sceneAutoSwitch,
   sceneBudgetMs,
   sceneEnabled,
 } from '../lib/presets.js';
@@ -32,7 +33,7 @@ test('each scene ships an independent default', () => {
   }
   // The download budget differs from the web ones on purpose: a dead mirror and a slow
   // page are different problems.
-  assert.equal(scenes.download.seconds, 30);
+  assert.equal(scenes.download.seconds, 20, 'downloads default to a shorter budget than reads');
   assert.equal(scenes.fetch.seconds, 15);
   assert.equal(scenes.search.seconds, 15);
 });
@@ -124,7 +125,34 @@ test('per-scene settings survive a full round trip', () => {
       search: { enabled: true, seconds: 12 },
     },
   });
-  assert.deepEqual(config.scenes.download, { enabled: true, seconds: 45 });
-  assert.deepEqual(config.scenes.fetch, { enabled: false, seconds: 8 });
-  assert.deepEqual(config.scenes.search, { enabled: true, seconds: 12 });
+  assert.deepEqual(config.scenes.download, { enabled: true, autoSwitch: true, seconds: 45 });
+  assert.deepEqual(config.scenes.fetch, { enabled: false, autoSwitch: true, seconds: 8 });
+  assert.deepEqual(config.scenes.search, { enabled: true, autoSwitch: true, seconds: 12 });
+});
+
+test('each scene switches independently of the others', () => {
+  // The user asked for the three switch behaviours to be independent. Turning one off must
+  // not change another, and the global flag is only a fallback for configs without scenes.
+  const scenes = normalizeScenes({
+    download: { autoSwitch: false },
+    fetch: { autoSwitch: true },
+    search: { autoSwitch: true },
+  }, []);
+  assert.equal(sceneAutoSwitch(scenes, 'download'), false);
+  assert.equal(sceneAutoSwitch(scenes, 'fetch'), true);
+  assert.equal(sceneAutoSwitch(scenes, 'search'), true);
+});
+
+test('autoSwitch defaults to on for every scene', () => {
+  const scenes = defaultScenes();
+  for (const scene of PRESET_SCENES) {
+    assert.equal(sceneAutoSwitch(scenes, scene), true, `${scene} must switch by default`);
+  }
+});
+
+test('a scene without an entry falls back to the caller-supplied default', () => {
+  // `sceneEnabled` and `sceneAutoSwitch` answer "no entry" differently on purpose: a scene
+  // that was never configured behaves as enabled and switching.
+  assert.equal(sceneAutoSwitch(undefined, 'fetch'), true);
+  assert.equal(sceneAutoSwitch({}, 'fetch'), true);
 });
