@@ -68,7 +68,7 @@ $env:DSH_PROFILE   # 桌面版一般是 desktop
 
 | 类型 | 默认 | 卡住后 |
 |---|---|---|
-| **下载** | **30 秒** | **中止 + 给智能体换源提示** |
+| **下载** | **20 秒** | **中止 + 给智能体换源提示** |
 | 抓取 `web_fetch` | 15 秒 | 中止 + 改用搜索 |
 | 搜索 `web_search` | 15 秒 | 中止 + 重试一次 |
 | 读取 | 20 秒 | 只提示 |
@@ -77,7 +77,26 @@ $env:DSH_PROFILE   # 桌面版一般是 desktop
 | 长任务 | 120 秒 | 只提示 |
 | 其他 | 30 秒 | 只提示 |
 
-下载有**独立预算**（`downloadSeconds`，默认 30 秒），不占用 `exec` 的 30 秒。
+### 每个场景的「是否动手」可独立设置
+
+三个场景（下载 / 抓取 / 搜索）各有**两个独立开关**：
+
+| 开关 | 含义 |
+|---|---|
+| 启用 | 这个场景是否工作 |
+| 超时后采取动作 | 卡住时是**动手**（中止 + 换源/换路），还是**只提示** |
+
+因此可以组合成任意搭配，例如「下载自动换源、抓取只提示」：
+
+```json
+"scenes": {
+  "download": { "enabled": true, "autoSwitch": true,  "seconds": 30 },
+  "fetch":    { "enabled": true, "autoSwitch": false, "seconds": 15 },
+  "search":   { "enabled": true, "autoSwitch": true,  "seconds": 15 }
+}
+```
+
+下载有**独立预算**（`scenes.download.seconds`，默认 20 秒），不占用 `exec` 的 30 秒。
 原因很直接：等一个死掉的镜像 30 秒和等一个慢编译 30 秒，代价完全不同。
 
 ## 为什么只掐下载，不掐写文件
@@ -99,7 +118,7 @@ $env:DSH_PROFILE   # 桌面版一般是 desktop
   "version": 1,
   "enabled": true,
   "watchDownloads": true,
-  "downloadSeconds": 30,
+  "downloadSeconds": 20,
   "timers": { "fetch": 15, "search": 15, "read": 20, "write": 30, "exec": 30, "long": 120, "other": 30 },
   "overrides": { "web_fetch": 45 },
   "autoSwitch": true,
