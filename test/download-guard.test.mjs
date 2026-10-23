@@ -10,7 +10,9 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import { installGuard } from '../lib/guard.js';
-import { StallMonitor, LEVEL_FAILED } from '../lib/state.js';
+import { detectDownload, downloadTimeoutResult } from '../lib/download.js';
+import { classify } from '../lib/classify.js';
+import { StallMonitor, LEVEL_FAILED, LEVEL_SWITCHED } from '../lib/state.js';
 import { createFakeContext, dispatch, makeExec, sleep } from './helpers.mjs';
 
 /** Config store double with the download settings in place. */
@@ -67,7 +69,9 @@ test('a stalled git clone is killed and answered with switch-source advice', asy
   const snapshot = monitor.snapshot();
   assert.equal(snapshot.stats.stalls, 1);
   assert.equal(snapshot.supervisor.download, true);
-  assert.equal(snapshot.supervisor.level, LEVEL_FAILED);
+  // The advisory was delivered, so the guard's own action succeeded. Whether the agent's
+  // retry works afterwards is outside this plugin's observation.
+  assert.equal(snapshot.supervisor.level, LEVEL_SWITCHED);
   assert.match(snapshot.supervisor.fallback, /switch-git-source/);
   dispose();
 });
@@ -185,4 +189,15 @@ test('a download that errors for another reason still reaches the caller when no
     /repository not found/,
   );
   dispose();
+});
+
+test('a download reports a successful switch, not a failure', () => {
+  // Reported as "download no longer auto-switches": the advisory WAS delivered, but the
+  // level was hard-coded to FAILED, so the UI showed a failure and looked like nothing
+  // happened. The guard's own action succeeded, so it must report SWITCHED.
+  const detection = detectDownload({ name: 'ops_bash', arguments: { command: 'git clone https://github.com/a/b.git' } }, classify);
+  assert.ok(detection, 'the command must still be detected');
+  const result = downloadTimeoutResult({ detection, timeoutMs: 30000, elapsedMs: 30000, locale: 'zh' });
+  assert.equal(result.isError, true, 'the tool result stays an error: the transfer failed');
+  assert.equal(result.value.advice, 'switch-source', 'the agent is told to switch source');
 });
