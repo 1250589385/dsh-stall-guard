@@ -57,9 +57,9 @@ window.__ModuleLoader__.load({
     const PRESET_SCENES = ['download', 'fetch', 'search'];
     /** Per-scene defaults, mirroring lib/presets.js. */
     const SCENE_DEFAULTS = {
-      download: { enabled: true, seconds: 30 },
-      fetch: { enabled: true, seconds: 15 },
-      search: { enabled: true, seconds: 15 },
+      download: { enabled: true, autoSwitch: true, seconds: 20 },
+      fetch: { enabled: true, autoSwitch: true, seconds: 15 },
+      search: { enabled: true, autoSwitch: true, seconds: 15 },
     };
 
     function defaultScenes() {
@@ -75,6 +75,7 @@ window.__ModuleLoader__.load({
         const value = raw[scene];
         if (!isObject(value)) continue;
         out[scene].enabled = value.enabled !== false;
+        out[scene].autoSwitch = value.autoSwitch !== false;
         out[scene].seconds = intWithin(value.seconds, SCENE_DEFAULTS[scene].seconds, 1, 3600);
       }
       return out;
@@ -193,6 +194,8 @@ window.__ModuleLoader__.load({
       sectionScenes: 'Each feature, configured separately',
       scenesHint: 'Turn one off without affecting the others. Each has its own timeout.',
       sceneSeconds: 'Timeout (s)',
+      sceneAutoSwitch: 'Act on timeout',
+      sceneAutoSwitchOff: 'Only reports the timeout; nothing is stopped and no advice is sent.',
       presetsHint: 'Write the exact text the agent reads when a stall is reported. Placeholders are filled in automatically; an empty box uses the built-in wording.',
       presetSceneDownload: 'Download',
       presetSceneFetch: 'Page fetch',
@@ -288,6 +291,8 @@ window.__ModuleLoader__.load({
       sectionScenes: '\u6bcf\u4e2a\u529f\u80fd\u72ec\u7acb\u914d\u7f6e',
       scenesHint: '\u5173\u6389\u4e00\u4e2a\u4e0d\u5f71\u54cd\u5176\u5b83\u3002\u6bcf\u4e2a\u7c7b\u578b\u6709\u81ea\u5df1\u7684\u8d85\u65f6\u3002',
       sceneSeconds: '\u8d85\u65f6\uff08\u79d2\uff09',
+      sceneAutoSwitch: '\u8d85\u65f6\u540e\u91c7\u53d6\u52a8\u4f5c',
+      sceneAutoSwitchOff: '\u53ea\u63d0\u793a\u8d85\u65f6\uff0c\u4e0d\u4e2d\u6b62\u4e5f\u4e0d\u53d1\u63d0\u9192\u3002',
       presetsHint: '\u76f4\u63a5\u5199\u4f60\u8981\u53d1\u7ed9\u667a\u80fd\u4f53\u7684\u6587\u5b57\uff0c\u5360\u4f4d\u7b26\u4f1a\u81ea\u52a8\u66ff\u6362\uff1b\u7a7a\u7740 = \u7528\u5185\u7f6e\u6587\u6848\u3002',
       presetSceneDownload: '\u4e0b\u8f7d',
       presetSceneFetch: '\u6293\u53d6\u7f51\u9875',
@@ -503,7 +508,7 @@ window.__ModuleLoader__.load({
         overrides,
         autoSwitch: body.autoSwitch !== false,
         watchDownloads: body.watchDownloads !== false,
-        downloadSeconds: intWithin(body.downloadSeconds, 30, 1, 3600),
+        downloadSeconds: intWithin(body.downloadSeconds, 20, 1, 3600),
         scenes: normalizeScenes(body.scenes),
         presets: normalizePresets(body.presets),
         supervisor: {
@@ -899,18 +904,21 @@ window.__ModuleLoader__.load({
         autoSwitch: draft.autoSwitch === true,
         // Missing these two used to mean the panel silently reset them on every save.
         watchDownloads: draft.watchDownloads === true,
-        downloadSeconds: intWithin(draft.downloadSeconds, 30, 1, 3600),
+        downloadSeconds: intWithin(draft.downloadSeconds, 20, 1, 3600),
         scenes: {
           download: {
             enabled: draft.scenes.download.enabled === true,
-            seconds: intWithin(draft.scenes.download.seconds, 30, 1, 3600),
+            autoSwitch: draft.scenes.download.autoSwitch === true,
+            seconds: intWithin(draft.scenes.download.seconds, 20, 1, 3600),
           },
           fetch: {
             enabled: draft.scenes.fetch.enabled === true,
+            autoSwitch: draft.scenes.fetch.autoSwitch === true,
             seconds: intWithin(draft.scenes.fetch.seconds, 15, 1, 3600),
           },
           search: {
             enabled: draft.scenes.search.enabled === true,
+            autoSwitch: draft.scenes.search.autoSwitch === true,
             seconds: intWithin(draft.scenes.search.seconds, 15, 1, 3600),
           },
         },
@@ -1737,17 +1745,6 @@ window.__ModuleLoader__.load({
             }),
             h('span', null, t('enabled')),
           ),
-          h('label', { className: 'dsg-check' },
-            h('input', {
-              type: 'checkbox',
-              checked: draft.autoSwitch === true,
-              onChange: (event) => {
-                const checked = event.target.checked;
-                edit((next) => { next.autoSwitch = checked; });
-              },
-            }),
-            h('span', null, t('autoSwitch')),
-          ),
         ),
 
         /* per-scene configuration: each of the three features stands alone */
@@ -1786,6 +1783,22 @@ window.__ModuleLoader__.load({
                 }),
               ),
             ),
+            /* Each scene decides for itself whether a timeout is acted on or only reported. */
+            h('label', { className: 'dsg-check' },
+              h('input', {
+                type: 'checkbox',
+                checked: draft.scenes[scene].autoSwitch !== false,
+                disabled: draft.scenes[scene].enabled !== true,
+                onChange: (event) => {
+                  const checked = event.target.checked;
+                  edit((next) => { next.scenes[scene].autoSwitch = checked; });
+                },
+              }),
+              h('span', null, t('sceneAutoSwitch')),
+            ),
+            draft.scenes[scene].autoSwitch === false
+              ? h('p', { className: 'dsg-status', 'data-tone': 'muted' }, t('sceneAutoSwitchOff'))
+              : null,
           )),
         ),
 
