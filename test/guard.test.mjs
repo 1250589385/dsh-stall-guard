@@ -198,12 +198,23 @@ test('an error result from the body is not mistaken for success', async () => {
   dispose();
 });
 
-test('autoSwitch off turns a stalled fetch into a notify instead of a switch', async () => {
+test('a scene with autoSwitch off turns a stalled fetch into a notify instead of a switch', async () => {
   const web = fakeWeb([{ sources: [{ url: 'https://example.com/x', title: 'X' }] }]);
   const ctx = createFakeContext({ services: { web } });
   const monitor = new StallMonitor();
+  // Switching is now governed per scene, not by one global flag.
   const dispose = installGuard(ctx, {
-    config: store({ autoSwitch: false, timers: { ...store({}).get().timers, fetch: 1 } }),
+    config: store({
+      autoSwitch: false,
+      scenes: {
+        download: { enabled: true, autoSwitch: true, seconds: 30 },
+        // The scene budget is authoritative for a scene that has one, so shortening the
+        // test needs `seconds: 1` here — `timers.fetch` alone no longer applies.
+        fetch: { enabled: true, autoSwitch: false, seconds: 1 },
+        search: { enabled: true, autoSwitch: true, seconds: 15 },
+      },
+      timers: { ...store({}).get().timers, fetch: 1 },
+    }),
     monitor,
     locale: () => 'zh',
   });
